@@ -41,6 +41,22 @@ class Personalization implements \JsonSerializable
     private $custom_args;
     /** @var $send_at SendAt object */
     private $send_at;
+    
+    /**
+     * @var bool
+     */
+    private $isV3 = false;
+
+    /**
+     * Flag if we want to use dynamic template vs. sub tags
+     *
+     * @param bool $isV3
+     */
+	public function setIsV3(bool $isV3)
+	{
+		$this->isV3 = $isV3;
+		return $this;
+	}
 
     /**
      * Add a To object to a Personalization object
@@ -215,20 +231,26 @@ class Personalization implements \JsonSerializable
      */
     public function jsonSerialize()
     {
-        return array_filter(
-            [
-                'to' => $this->getTos(),
-                'cc' => $this->getCcs(),
-                'bcc' => $this->getBccs(),
-                'subject' => $this->getSubject(),
-                'headers' => $this->getHeaders(),
-                'substitutions' => $this->getSubstitutions(),
-                'custom_args' => $this->getCustomArgs(),
-                'send_at' => $this->getSendAt()
-            ],
-            function ($value) {
-                return $value !== null;
-            }
-        ) ?: null;
+        $data = [
+			'to' => $this->getTos(),
+			'cc' => $this->getCcs(),
+			'bcc' => $this->getBccs(),
+			'subject' => $this->subject,
+			'headers' => $this->getHeaders(),
+			'custom_args' => $this->getCustomArgs(),
+			'send_at' => $this->getSendAt()
+		];
+
+		$key = 'substitutions';
+
+		if ($this->isV3) {
+			$key = 'dynamic_template_data';
+		}
+
+		$data[$key] = $this->getSubstitutions();
+
+        return array_filter($data, function ($value) {
+			return $value !== null;
+        }) ?: null;
     }
 }
